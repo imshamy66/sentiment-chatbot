@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Wellness Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            height: 90vh;
+        }
+        
+        .chat-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: calc(90vh - 40px);
+        }
+        
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #fafbfc;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0;
+            background: white;
+        }
+        
+        #user-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 2px solid #e1e4e8;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        #user-input:focus {
+            border-color: #0366d6;
+            outline: none;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background-color: #0366d6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #0256b4;
+        }
+        
+        .message {
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+            position: relative;
+        }
+        
+        .user-message {
+            background-color: #e1f5fe;
+            margin-left: auto;
+            color: #0d47a1;
+        }
+        
+        .bot-message {
+            background-color: #f5f5f5;
+            margin-right: auto;
+            color: #333;
+        }
+        
+        .wellness-suggestion {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            border-radius: 4px;
+            font-size: 0.95em;
+            color: #1b5e20;
+            position: relative;
+        }
+
+        .wellness-suggestion::before {
+            content: '💡 Wellness Tip:';
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2e7d32;
+        }
+        
+        .emotion-tag {
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-top: 5px;
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .analytics-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            height: calc(90vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .pattern-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e1e4e8;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .wellness-history {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 10px;
+            margin-top: 10px;
+            min-height: 0;
+        }
+
+        .history-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+        }
+
+        .history-item .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .wellness-history::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .wellness-history::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .wellness-history::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .wellness-history::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .pattern-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        h3 {
+            color: #24292e;
+            margin: 15px 0;
+        }
+
+        h4 {
+            color: #444d56;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="chat-panel">
+            <div class="chat-box" id="chat-box"></div>
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Type your message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+        
+        <div class="analytics-panel">   
+            <div class="pattern-info">
+                <h4>Recent Wellness Suggestions</h4>
+                <div id="wellness-history" class="wellness-history"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addMessage(message, isUser, emotion = null, confidence = null, wellness = null) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const textDiv = document.createElement('div');
+            textDiv.textContent = message;
+            messageDiv.appendChild(textDiv);
+            
+            if (emotion && confidence) {
+                const emotionDiv = document.createElement('div');
+                emotionDiv.className = 'emotion-tag';
+                emotionDiv.textContent = `${emotion} (${confidence})`;
+                messageDiv.appendChild(emotionDiv);
+            }
+            
+            if (wellness && !isUser) {
+                const wellnessDiv = document.createElement('div');
+                wellnessDiv.className = 'wellness-suggestion';
+                wellnessDiv.textContent = wellness;
+                messageDiv.appendChild(wellnessDiv);
+                
+                addToWellnessHistory(wellness, emotion);
+            }
+            
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+        function addToWellnessHistory(suggestion, emotion) {
+            const historyDiv = document.getElementById('wellness-history');
+            if (!historyDiv) return; // Guard clause if element doesn't exist
+            
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            historyItem.innerHTML = `
+                <div class="timestamp">${timestamp}</div>
+                <div>${suggestion}</div>
+                <div class="emotion-tag">${emotion}</div>
+            `;
+            
+            if (historyDiv.firstChild) {
+                historyDiv.insertBefore(historyItem, historyDiv.firstChild);
+            } else {
+                historyDiv.appendChild(historyItem);
+            }
+            
+            while (historyDiv.children.length > 5) {
+                historyDiv.removeChild(historyDiv.lastChild);
+            }
+        }
+
+        async function sendMessage() {
+            const inputElement = document.getElementById('user-input');
+            if (!inputElement) return;
+            
+            const message = inputElement.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            inputElement.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                addMessage(
+                    data.response,
+                    false,
+                    data.emotion,
+                    data.confidence,
+                    data.wellness_suggestion
+                );
+                
+                if (data.patterns) {
+                    updateCharts(data.patterns);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Sorry, there was an error processing your message.', false);
+            }
+        }
+
+        function updateInsights(patterns) {
+            const insightsDiv = document.getElementById('insights-content');
+            if (!insightsDiv) return;
+            
+            let insightsHtml = '';
+            
+            if (patterns.common_emotions) {
+                const dominantEmotion = Object.entries(patterns.common_emotions)
+                    .sort((a, b) => b[1] - a[1])[0];
+                insightsHtml += `<div class="pattern-item">
+                    Most common emotion: ${dominantEmotion[0]} (${dominantEmotion[1]} times)
+                </div>`;
+            }
+            
+            if (patterns.active_hours) {
+                const peakHour = Object.entries(patterns.active_hours)
+                    .sort((a, b) => b[1] - a[1])[0];
+                insightsHtml += `<div class="pattern-item">
+                    Most active hour: ${peakHour[0]}:00 (${peakHour[1]} messages)
+                </div>`;
+            }
+            
+            insightsDiv.innerHTML = insightsHtml;
+        }
+
+        document.getElementById('user-input')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
